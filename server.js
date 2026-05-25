@@ -293,15 +293,27 @@ app.get('/api/orders/:id', adminAuth, async (req, res) => {
 
 app.post('/api/orders', async (req, res) => {
   try {
-    const orderData = req.body;
+    let orderData = req.body;
     
-    // Convert string numbers to actual numbers
-    if (orderData.total) orderData.total = Number(String(orderData.total).replace(/[^0-9.-]/g, ''));
-    if (orderData.subtotal) orderData.subtotal = Number(String(orderData.subtotal).replace(/[^0-9.-]/g, ''));
-    if (orderData.discount) orderData.discount = Number(String(orderData.discount).replace(/[^0-9.-]/g, ''));
+    // Safely convert string numbers to actual numbers
+    try {
+      if (orderData.total && typeof orderData.total === 'string') {
+        orderData.total = parseFloat(String(orderData.total).replace(/[^0-9.-]/g, '')) || 0;
+      }
+      if (orderData.subtotal && typeof orderData.subtotal === 'string') {
+        orderData.subtotal = parseFloat(String(orderData.subtotal).replace(/[^0-9.-]/g, '')) || 0;
+      }
+      if (orderData.discount && typeof orderData.discount === 'string') {
+        orderData.discount = parseFloat(String(orderData.discount).replace(/[^0-9.-]/g, '')) || 0;
+      }
+    } catch (convErr) {
+      console.warn('⚠️ Number conversion warning:', convErr.message);
+    }
     
     // Ensure items array exists
-    if (!orderData.items) orderData.items = [];
+    if (!orderData.items || !Array.isArray(orderData.items)) {
+      orderData.items = [];
+    }
     
     const order = new Order(orderData);
     await order.save();
