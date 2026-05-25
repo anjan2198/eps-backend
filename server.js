@@ -544,7 +544,7 @@ app.use((req, res) => {
 // ═══════════════════════════════════════════
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('✅ All endpoints ready:');
@@ -558,4 +558,27 @@ app.listen(PORT, () => {
   console.log('   • /api/analytics - Analytics data (admin)');
   console.log('   • /api/payment/* - Payment processing (no auth)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('📤 SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    mongoose.connection.close(false, () => {
+      console.log('✅ MongoDB connection closed');
+      process.exit(0);
+    });
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('❌ Force shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+});
+
+process.on('SIGINT', () => {
+  console.log('⚠️ SIGINT signal received');
+  process.exit(0);
 });
